@@ -79,7 +79,7 @@ async function blurImage(filePath) {
     const messageId = filePath.split(path.sep)[1];
     const bucket = admin.storage().bucket();
 
-    const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
+    const dirPath = path.dirname(filePath);
     const fileName = path.basename(filePath);
 
     // crear path original
@@ -96,9 +96,7 @@ async function blurImage(filePath) {
     });
     console.log('Image has been downloaded to', tempLocalFile);
     // Guardo otra imagen
-    await bucket.upload(tempLocalFile, {
-        destination: filePathOriginal
-    })
+    await bucket.file(filePath).copy(filePathOriginal)
 
     // Blur the image using ImageMagick.
     await spawn('convert', [tempLocalFile, '-channel', 'RGBA', '-blur', '0x24', tempLocalFile]);

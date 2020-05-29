@@ -357,13 +357,13 @@ function displayMessage(id, timestamp, name, text, picUrl, imageUrl) {
     button.innerText = 'original'
 
     // cambiamos src a la imagen original
-    const arrayPath = imageUrl.substring(0, imageUrl.lastIndexOf("/"))
+    const arrayPath = imageUrl.substring(0, imageUrl.lastIndexOf('%2F'))
     const nameFile = imageUrl.replace(/^.*(%2F)/, '')
-    const imageOriginal = arrayPath + '/original-' + nameFile
+    const imageOriginal = arrayPath + '%2Foriginal-' + nameFile
     
     console.log('ap ', arrayPath);
     
-    console.log('nf ', nameFile);
+    console.log('nf ', nameFile[0]);
 
     console.log('im ', imageOriginal);
 
