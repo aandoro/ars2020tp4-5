@@ -356,8 +356,23 @@ function displayMessage(id, timestamp, name, text, picUrl, imageUrl) {
     var button = document.createElement('button');
     button.innerText = 'original'
 
+    // cambiamos src a la imagen original
+    const arrayPath = imageUrl.substring(0, imageUrl.lastIndexOf("/"))
+    const nameFile = imageUrl.replace(/^.*(%2F)/, '')
+    const imageOriginal = arrayPath + '/original-' + nameFile
+    
+    console.log('ap ', arrayPath);
+    
+    console.log('nf ', nameFile);
+
+    console.log('im ', imageOriginal);
+
+
     button.addEventListener('click', () => {
       console.log('hola soy el boton de la imagen')
+      image.src = imageOriginal + '&' + new Date().getTime();
+      messageElement.innerHTML = '';
+      messageElement.appendChild(image);
     })
     messageElement.appendChild(button)
   }

@@ -55,29 +55,21 @@ exports.blurOffensiveImages = functions.runWith({
     memory: '2GB'
 }).storage.object().onFinalize(
     async (object) => {
+        const messageId = object.name.split(path.sep)[1];
 
-        if (!object.moderated) {
-
-            return blurImage(object.name);
-        }
-        /*const image = {
-            source: {
-                imageUri: `gs://${object.bucket}/${object.name}`
-            },
-        };
-
-        // Check the image content using the Cloud Vision API.
-        const batchAnnotateImagesResponse = await vision.safeSearchDetection(image);
-        const safeSearchResult = batchAnnotateImagesResponse[0].safeSearchAnnotation;
-        const Likelihood = Vision.types.Likelihood;
-        
-        if (Likelihood[safeSearchResult.adult] >= Likelihood.LIKELY ||
-            Likelihood[safeSearchResult.violence] >= Likelihood.LIKELY) {
-            console.log('The image', object.name, 'has been detected as inappropriate.');
-            return blurImage(object.name);
-        }
-        console.log('The image', object.name, 'has been detected as OK.');
-        */
+        admin.firestore().collection('messages').doc(messageId).get()
+            .then(docSnapshot => {
+                if (!docSnapshot.data().moderated) {
+                    console.log("La imagen no esta moderada, moderarla ahora.");
+                    return blurImage(object.name);
+                } else {
+                    console.log("La imagen ya esta moderada, no volver a moderarla!");
+                }
+            })
+            .catch(error => {
+                console.log("Error getting document: ", error);
+                return response.status(500).send(error);
+            });
     });
 
 // Blurs the given image located in the given bucket using ImageMagick.
@@ -87,6 +79,11 @@ async function blurImage(filePath) {
     const messageId = filePath.split(path.sep)[1];
     const bucket = admin.storage().bucket();
 
+    const dirPath = filePath.substring(0, filePath.lastIndexOf("/"));
+    const fileName = path.basename(filePath);
+
+    // crear path original
+    const filePathOriginal = dirPath+ '/original-' + fileName;
 
     // Indicate that the message has been moderated.
     await admin.firestore().collection('messages').doc(messageId).update({
@@ -99,7 +96,10 @@ async function blurImage(filePath) {
     });
     console.log('Image has been downloaded to', tempLocalFile);
     // Guardo otra imagen
-    
+    await bucket.upload(tempLocalFile, {
+        destination: filePathOriginal
+    })
+
     // Blur the image using ImageMagick.
     await spawn('convert', [tempLocalFile, '-channel', 'RGBA', '-blur', '0x24', tempLocalFile]);
     console.log('Image has been blurred');
