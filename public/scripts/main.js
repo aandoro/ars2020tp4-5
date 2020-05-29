@@ -113,18 +113,28 @@ function saveImageMessage(file) {
     name: getUserName(),
     imageUrl: LOADING_IMAGE_URL,
     profilePicUrl: getProfilePicUrl(),
-    moderated: false,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function (messageRef) {
+  }).then(async function (messageRef) {
     // 2 - Upload the image to Cloud Storage.
     var filePath = firebase.auth().currentUser.uid + '/' + messageRef.id + '/' + file.name;
-    return firebase.storage().ref(filePath).put(file).then(function (fileSnapshot) {
+    await firebase.storage().ref(filePath).put(file).then(function (fileSnapshot) {
       // 3 - Generate a public URL for the file.
-      return fileSnapshot.ref.getDownloadURL().then((url) => {
+      fileSnapshot.ref.getDownloadURL().then((url) => {
         // 4 - Update the chat message placeholder with the image's URL.
-        return messageRef.update({
+        messageRef.update({
           imageUrl: url,
           storageUri: fileSnapshot.metadata.fullPath
+        });
+      });
+    });
+    var originalFilePath = firebase.auth().currentUser.uid + '/' + messageRef.id + '/original-' + file.name;
+    await firebase.storage().ref(originalFilePath).put(file).then(function (fileSnapshot) {
+      // 3 - Generate a public URL for the file.
+      fileSnapshot.ref.getDownloadURL().then((url) => {
+        // 4 - Update the chat message placeholder with the image's URL.
+        messageRef.update({
+          originalImageUrl: url,
+          originalStorageUri: fileSnapshot.metadata.fullPath
         });
       });
     });
@@ -360,13 +370,6 @@ function displayMessage(id, timestamp, name, text, picUrl, imageUrl) {
     const arrayPath = imageUrl.substring(0, imageUrl.lastIndexOf('%2F'))
     const nameFile = imageUrl.replace(/^.*(%2F)/, '')
     const imageOriginal = arrayPath + '%2Foriginal-' + nameFile
-    
-    console.log('ap ', arrayPath);
-    
-    console.log('nf ', nameFile[0]);
-
-    console.log('im ', imageOriginal);
-
 
     button.addEventListener('click', () => {
       console.log('hola soy el boton de la imagen')

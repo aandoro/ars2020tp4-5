@@ -55,6 +55,10 @@ exports.blurOffensiveImages = functions.runWith({
     memory: '2GB'
 }).storage.object().onFinalize(
     async (object) => {
+        filename = object.name.split(path.sep)[2];
+        console.log('The Image ', filename, 'has been detected as inappropiate.');
+        if (filename.indexOf('original-') === 0)
+            return;
         const messageId = object.name.split(path.sep)[1];
 
         admin.firestore().collection('messages').doc(messageId).get()
@@ -79,11 +83,11 @@ async function blurImage(filePath) {
     const messageId = filePath.split(path.sep)[1];
     const bucket = admin.storage().bucket();
 
-    const dirPath = path.dirname(filePath);
-    const fileName = path.basename(filePath);
+    //const dirPath = path.dirname(filePath);
+    //const fileName = path.basename(filePath);
 
     // crear path original
-    const filePathOriginal = dirPath+ '/original-' + fileName;
+    //const filePathOriginal = dirPath+ '/original-' + fileName;
 
     // Indicate that the message has been moderated.
     await admin.firestore().collection('messages').doc(messageId).update({
@@ -96,7 +100,7 @@ async function blurImage(filePath) {
     });
     console.log('Image has been downloaded to', tempLocalFile);
     // Guardo otra imagen
-    await bucket.file(filePath).copy(filePathOriginal)
+    //await admin.storage().ref(filePathOriginal).put(tempLocalFile)
 
     // Blur the image using ImageMagick.
     await spawn('convert', [tempLocalFile, '-channel', 'RGBA', '-blur', '0x24', tempLocalFile]);
